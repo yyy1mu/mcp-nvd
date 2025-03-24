@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Setup Python
+        run: uv python install 3.10  
+
+      - name: Install Project and Dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Build Docker Image
+        working-directory: .
+        run: docker build -t mcp-nvd:test .
+
+      - name: Run Docker Compose
+        working-directory: tests
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}  
+        run: |
+          docker-compose up -d
+          # Wait for the server to be ready (adjust sleep time if needed)
+          sleep 10
+
+      - name: Run Tests
+        working-directory: tests
+        run: uv run python test_tools.py
+
+      - name: Lint with Ruff
+        run: uv run ruff check .
+
+      - name: Stop Docker Compose
+        if: always()  
+        working-directory: tests
+        run: docker-compose down
