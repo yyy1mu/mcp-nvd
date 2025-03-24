@@ -1,5 +1,9 @@
 # NVD Database MCP Server
+[![PyPI - Version](https://img.shields.io/pypi/v/mcp-nvd)](https://pypi.org/project/mcp-nvd)
 
+<a href="https://glama.ai/mcp/servers/@marcoeg/mcp-nvd">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@marcoeg/mcp-nvd/badge" />
+</a>
 
 A [Model Context Protocol](https://modelcontextprotocol.io/) server implementation to query the NIST National Vulnerability Database (NVD) via its API. [https://nvd.nist.gov/](https://nvd.nist.gov/)
 
