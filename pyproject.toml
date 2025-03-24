@@ -1,0 +1,28 @@
+[project]
+name = "mcp-nvd"
+version = "0.0.1"
+description = "An MCP server to interact with a the NVD Database API."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+ "httpx>=0.27.2",
+ "mcp>=1.0.0",
+ "python-dotenv>=1.0.1",
+ "uvicorn>=0.27.0",
+ "starlette>=0.36.0",
+ "typer>=0.15.2",
+]
+
+authors = [{ name = "Graziano Labs Corp." }]
+maintainers = [
+    { name = "Marco Graziano", email = "marco@graziano.com" },
+]
+keywords = ["mcp", "llm", "cybersecurity"]
+license = { text = "MIT" }
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.scripts]
+mcp-nvd = "mcp_nvd.main:main"

@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  mcp-nvd:
+    image: mcp-nvd:test       # Pre-built image for testing (replace with your actual image name:tag)
+    ports:
+      - "9090:9090"           # Map host port 9090 to container port 9090
+    environment:
+      - PYTHONUNBUFFERED=1    # Ensure real-time logging
+      - NVD_API_KEY=${NVD_API_KEY}  # Load NVD_API_KEY from .env or environment
+    volumes:
+      - log-data:/app/logs    # Persistent volume for logs (optional)
+    restart: unless-stopped   # Restart unless explicitly stopped
+
+volumes:
+  log-data:                  # Named volume for persistent logs
