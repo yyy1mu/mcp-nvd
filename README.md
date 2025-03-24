@@ -52,8 +52,8 @@ The server implements the following tools to query the NVD Database:
 {
   "mcpServers": {
     "mcp-nvd": {
-      "command": "/path/to/uv",
-      "args": ["run", "mcp-nvd"],
+      "command": "/path/to/uvx",
+      "args": ["mcp-nvd"],
       "env": {
         "NVD_API_KEY": "your-api-key"
       }
@@ -62,7 +62,7 @@ The server implements the following tools to query the NVD Database:
 }
 ```
 
-3. Replace `/path/to/uv` with the absolute path to the `uv` executable. Find the path with `which uv` command in a terminal. This ensures that the correct version of `uv` is used when starting the server.
+3. Replace `/path/to/uvx` with the absolute path to the `uvx` executable. Find the path with `which uvx` command in a terminal. This ensures that the correct version of `uvx` is used when starting the server.
 
 4. Restart Claude Desktop to apply the changes.
 
