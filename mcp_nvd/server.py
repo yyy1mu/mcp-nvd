@@ -185,3 +185,87 @@ async def search_cve(keyword: str, exact_match: bool = False, concise: bool = Fa
     result_str += "\n\n---\n\n".join(results_list)
     logger.info(f"Completed search for keyword: {keyword}, found {len(results_list)} results")
     return result_str
+
+@mcp.tool()
+async def search_cve_by_publication_date(start_date: str, end_date: str, concise: bool = False, max_results: int = 1000,
+                                         page_size: int = 100) -> str:
+    """
+    Search for ALL CVEs by PUBLICATION date within a specific range, using automated pagination.
+    The date range cannot exceed 120 days.
+    Dates must be in extended ISO-8601 format: YYYY-MM-DDTHH:MM:SSZ.
+    Example: '2025-01-01T00:00:00Z'
+    """
+    # --- 1. Validate inputs ---
+    try:
+        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+    except ValueError:
+        return "Error: Invalid date format. Please use the extended ISO-8601 format (e.g., '2025-01-20T14:00:00Z')."
+
+    if (end_dt - start_dt) > timedelta(days=120):
+        return "Error: The date range cannot exceed 120 consecutive days."
+
+    if start_dt > end_dt:
+        return "Error: The start date cannot be after the end date."
+
+    if not (1 <= page_size <= 2000):
+        return "Error: page_size must be between 1 and 2000."
+
+    # --- 2. Perform paginated search ---
+    all_vulnerabilities: List[Dict[str, Any]] = []
+    start_index = 0
+    total_results = 0
+
+    logger.info(f"Initiating paginated search for CVEs published between {start_date} and {end_date}.")
+
+    while True:
+        params = {
+            "pubStartDate": start_date,
+            "pubEndDate": end_date,
+            "resultsPerPage": page_size,
+            "startIndex": start_index
+        }
+        url = f"{BASE_URL}?{'&'.join(f'{k}={v}' for k, v in params.items())}"
+        data = await make_nvd_request(url)
+
+        # Stop if there's an API error or no more results
+        if not data or "vulnerabilities" not in data or not data["vulnerabilities"]:
+            if start_index == 0:  # If it fails on the very first request
+                return f"No CVEs found published between {start_date} and {end_date}."
+            logger.info("No more results found or API error occurred. Concluding search.")
+            break
+
+        if total_results == 0:  # Get total results only on the first successful call
+            total_results = data.get("totalResults", 0)
+
+        current_page_vulnerabilities = data["vulnerabilities"]
+        all_vulnerabilities.extend(current_page_vulnerabilities)
+
+        logger.info(f"Fetched {len(all_vulnerabilities)} of {total_results} total CVEs.")
+
+        # Stop if we have all results or have reached the user-defined max
+        if len(all_vulnerabilities) >= total_results or len(all_vulnerabilities) >= max_results:
+            break
+
+        # Prepare for the next page
+        start_index += page_size
+
+    # --- 3. Format and return the final results ---
+    if not all_vulnerabilities:
+        return f"No CVEs found published between {start_date} and {end_date} after a full search."
+
+    # Trim results if we exceeded max_results
+    if len(all_vulnerabilities) > max_results:
+        all_vulnerabilities = all_vulnerabilities[:max_results]
+
+    results_list = []
+    for cve_item in all_vulnerabilities:
+        cve_item = cve_item["cve"]
+        formatted_cve = format_cve(cve_item, concise)
+        results_list.append(formatted_cve)
+
+    summary = f"Displaying {len(results_list)} of {total_results} total CVEs found published between {start_date} and {end_date} (max_results cap: {max_results}):\n\n"
+    final_output = summary + "\n\n---\n\n".join(results_list)
+
+    logger.info(f"Completed paginated search. Returning {len(results_list)} CVEs.")
+    return final_output
